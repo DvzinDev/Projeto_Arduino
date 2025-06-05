@@ -1,29 +1,5 @@
+// biolab_home.dart
 import 'package:flutter/material.dart';
-import 'dart:async';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-
-void main() => runApp(const BioLabApp());
-
-class BioLabApp extends StatelessWidget {
-  const BioLabApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: navigatorKey,
-      debugShowCheckedModeBanner: false,
-      title: 'BioLab Monitor',
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF0f172a),
-        primaryColor: Colors.blueAccent,
-      ),
-      home: const BioLabHomePage(),
-    );
-  }
-}
 
 class BioLabHomePage extends StatefulWidget {
   const BioLabHomePage({super.key});
@@ -33,53 +9,25 @@ class BioLabHomePage extends StatefulWidget {
 }
 
 class _BioLabHomePageState extends State<BioLabHomePage> {
-  late Timer timer;
-  Map<String, dynamic> data = {};
+  late Map<String, dynamic> data;
 
   @override
   void initState() {
     super.initState();
-    atualizar();
-    timer = Timer.periodic(const Duration(seconds: 5), (_) => atualizar());
+    data = mockarDados();
   }
 
-  @override
-  void dispose() {
-    timer.cancel();
-    super.dispose();
-  }
-
-  Future<void> atualizar() async {
-    final resultado = await buscarDadosDaAPI();
-    setState(() {
-      data = resultado;
-    });
-  }
-
-  Future<Map<String, dynamic>> buscarDadosDaAPI() async {
-    try {
-      final response = await http.get(Uri.parse('https://api.seuservidor.com/status'));
-
-      if (response.statusCode == 200) {
-        final dados = json.decode(response.body);
-        dados['hora'] = TimeOfDay.now().format(navigatorKey.currentContext!);
-        return dados;
-      } else {
-        throw Exception('Erro ao buscar dados da API');
-      }
-    } catch (e) {
-      print('Erro: $e');
-      return {
-        'temperatura': 0,
-        'umidade': 0,
-        'sensoresAtivos': 0,
-        'ch4': {'valor': 0, 'percent': 0},
-        'co2': {'valor': 0, 'percent': 0},
-        'glp': {'valor': 0, 'percent': 0},
-        'chama': {'detectado': false},
-        'hora': TimeOfDay.now().format(navigatorKey.currentContext!)
-      };
-    }
+  Map<String, dynamic> mockarDados() {
+    return {
+      'temperatura': 24.5,
+      'umidade': 65,
+      'sensoresAtivos': 5,
+      'ch4': {'valor': 450, 'percent': 25},
+      'co2': {'valor': 850, 'percent': 65},
+      'glp': {'valor': 120, 'percent': 15},
+      'chama': {'detectado': false},
+      'hora': TimeOfDay.now().format(context)
+    };
   }
 
   Widget statusCard(String title, String value, Color color) {
@@ -165,12 +113,6 @@ class _BioLabHomePageState extends State<BioLabHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    if (data.isEmpty) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
     final co2Percent = data['co2']['percent'] as int;
     return Scaffold(
       appBar: AppBar(
